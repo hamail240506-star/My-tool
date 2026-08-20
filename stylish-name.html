@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stylish Name Generator — fancy text & PUBG names</title>
+<style>
+  :root{
+    --paper: #EAF0F2; --paper-line: #C7D5DA; --ink: #16324F; --ink-soft: #4A6274;
+    --brass: #C98A3C; --brass-dark: #A06A24; --teal: #2E7D6B; --panel: #FFFFFF;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace; --sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+    --radius: 4px;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 27px, var(--paper-line) 27px, var(--paper-line) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, var(--paper-line) 27px, var(--paper-line) 28px), var(--paper);
+    color: var(--ink); font-family: var(--sans); min-height: 100vh;
+    display:flex; flex-direction:column; align-items:center; padding: 32px 16px 64px;
+  }
+  @media (prefers-reduced-motion: reduce){ * { transition: none !important; animation: none !important; } }
+  .ruler{ width:100%; max-width: 640px; height: 34px; position: relative; margin-bottom: 8px; border-bottom: 2px solid var(--ink); }
+  .ruler .tick{ position:absolute; bottom:0; width:1px; background: var(--ink-soft); }
+  header{ width:100%; max-width: 640px; margin-bottom: 28px; }
+  h1{ font-family: var(--mono); font-size: clamp(28px, 6vw, 40px); font-weight: 700; letter-spacing: -0.5px; margin: 0 0 4px; }
+  h1 span{ color: var(--brass-dark); }
+  .subtitle{ color: var(--ink-soft); font-size: 14px; margin: 0; letter-spacing: 0.3px; }
+  .panel{ width:100%; max-width: 640px; background: var(--panel); border: 1.5px solid var(--ink); border-radius: var(--radius); box-shadow: 4px 4px 0 var(--ink); margin-bottom: 20px; }
+  .dial{ display:flex; border-bottom: 1.5px solid var(--ink); }
+  .dial button{ flex:1; background: var(--panel); border:none; border-right: 1.5px solid var(--ink); padding: 14px 8px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-soft); cursor:pointer; position:relative; }
+  .dial button:last-child{ border-right:none; }
+  .dial button.active{ color: var(--panel); background: var(--ink); }
+  .dial button.active::after{ content:""; position:absolute; bottom:-1.5px; left:0; right:0; height:3px; background: var(--brass); }
+  .dial button:focus-visible{ outline: 2px solid var(--teal); outline-offset: -2px; }
+  .body{ padding: 28px 24px 24px; }
+  .field{ margin-bottom: 18px; }
+  .field label{ display:block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input{ width:100%; font-family: var(--mono); font-size: 16px; padding: 10px 10px; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--paper); color: var(--ink); }
+  .field input:focus{ outline: 2px solid var(--teal); outline-offset: 1px; }
+  .list{ display:flex; flex-direction:column; gap: 10px; max-height: 480px; overflow-y:auto; }
+  .item{
+    display:flex; justify-content:space-between; align-items:center; gap: 10px;
+    padding: 12px 14px; background: var(--paper); border: 1.5px solid var(--paper-line); border-radius: var(--radius);
+  }
+  .item .txt{ font-size: 16px; word-break: break-word; }
+  .item button{
+    flex: 0 0 auto; background: var(--ink); color: var(--panel); border:none; border-radius: 3px;
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 6px 10px; cursor:pointer;
+  }
+  .item button:hover{ background: var(--teal); }
+  .item button.copied{ background: var(--brass); }
+  .hidden{ display:none; }
+  .hint{ font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+  footer{ max-width: 640px; width:100%; margin-top: 4px; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="ruler" id="ruler"></div>
+
+<header>
+  <h1>Style<span>.name</span></h1>
+  <p class="subtitle">Fancy text styles &amp; PUBG-ready names — tap to copy</p>
+</header>
+
+<div class="panel">
+  <div class="dial" id="dial">
+    <button class="active" data-tab="fancy">Fancy Text</button>
+    <button data-tab="pubg">PUBG Names</button>
+  </div>
+
+  <div class="body">
+
+    <!-- FANCY TEXT -->
+    <div class="tabpanel" id="panel-fancy">
+      <div class="field">
+        <label for="fancy-input">Your name or word</label>
+        <input type="text" id="fancy-input" placeholder="Type here..." value="Ali">
+      </div>
+      <div class="hint">Scroll for more styles</div>
+      <div class="list" id="fancy-list" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- PUBG NAMES -->
+    <div class="tabpanel hidden" id="panel-pubg">
+      <div class="field">
+        <label for="pubg-input">Your name (used inside the styles below)</label>
+        <input type="text" id="pubg-input" placeholder="Type here..." value="Ali">
+      </div>
+      <div class="hint">Symbol-based combos popular for PUBG / Free Fire usernames</div>
+      <div class="list" id="pubg-list" style="margin-top:12px;"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Runs entirely in your browser · Tap any result to copy it
+</footer>
+
+<script>
+  const ruler = document.getElementById('ruler');
+  function drawTicks(){
+    ruler.innerHTML = '';
+    const width = ruler.offsetWidth;
+    const count = Math.floor(width / 14);
+    for(let i=0;i<=count;i++){
+      const tick = document.createElement('div');
+      tick.className = 'tick';
+      const isMajor = i % 5 === 0;
+      tick.style.left = (i*14) + 'px';
+      tick.style.height = isMajor ? '16px' : '8px';
+      ruler.appendChild(tick);
+    }
+  }
+  drawTicks();
+  window.addEventListener('resize', drawTicks);
+
+  const dial = document.getElementById('dial');
+  dial.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    dial.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.add('hidden'));
+    document.getElementById('panel-' + btn.dataset.tab).classList.remove('hidden');
+  });
+
+  // ---------- Unicode fancy text maps ----------
+  const MAPS = {
+    bold: { name: 'Bold', map: mapRange('A','Z','𝗔').concat(mapRange('a','z','𝗮')).concat(mapRange('0','9','𝟬')) },
+    italic: { name: 'Italic', map: mapRange('A','Z','𝘈').concat(mapRange('a','z','𝘢')) },
+    script: { name: 'Script', map: mapRange('A','Z','𝒜', {skip:['B','E','F','H','I','J','L','M','R']}).concat(mapRange('a','z','𝒶')) },
+    doublestruck: { name: 'Double-struck', map: mapRange('A','Z','𝔸').concat(mapRange('a','z','𝕒')).concat(mapRange('0','9','𝟘')) },
+    fraktur: { name: 'Gothic', map: mapRange('A','Z','𝔄').concat(mapRange('a','z','𝔞')) },
+    smallcaps: { name: 'Small Caps', map: null }, // handled specially
+    circled: { name: 'Circled', map: mapRange('A','Z','Ⓐ').concat(mapRange('a','z','ⓐ')) },
+    squared: { name: 'Squared', map: mapRange('A','Z','🅰') },
+    monospace: { name: 'Monospace', map: mapRange('A','Z','𝙰').concat(mapRange('a','z','𝚊')).concat(mapRange('0','9','𝟶')) },
+    fullwidth: { name: 'Wide', map: mapRange('A','Z','A', {offset:0xFF21-0x41}).concat(mapRange('a','z','a', {offset:0xFF41-0x61})) }
+  };
+
+  function mapRange(startChar, endChar, unicodeStart, opts){
+    opts = opts || {};
+    const result = [];
+    const startCode = startChar.charCodeAt(0);
+    const endCode = endChar.charCodeAt(0);
+    let uStart = typeof unicodeStart === 'string' ? unicodeStart.codePointAt(0) : unicodeStart;
+    let offset = 0;
+    for(let c = startCode; c <= endCode; c++){
+      const ch = String.fromCharCode(c);
+      if(opts.skip && opts.skip.includes(ch)){
+        result.push([ch, ch]);
+        continue;
+      }
+      if(opts.offset !== undefined){
+        result.push([ch, String.fromCodePoint(c + opts.offset)]);
+      } else {
+        result.push([ch, String.fromCodePoint(uStart + offset)]);
+        offset++;
+      }
+    }
+    return result;
+  }
+
+  const SMALLCAPS = {
+    a:'ᴀ',b:'ʙ',c:'ᴄ',d:'ᴅ',e:'ᴇ',f:'ꜰ',g:'ɢ',h:'ʜ',i:'ɪ',j:'ᴊ',k:'ᴋ',l:'ʟ',m:'ᴍ',
+    n:'ɴ',o:'ᴏ',p:'ᴘ',q:'ǫ',r:'ʀ',s:'s',t:'ᴛ',u:'ᴜ',v:'ᴠ',w:'ᴡ',x:'x',y:'ʏ',z:'ᴢ'
+  };
+
+  function applyMap(text, mapArr){
+    const dict = {};
+    mapArr.forEach(([from,to]) => dict[from] = to);
+    return text.split('').map(ch => dict[ch] !== undefined ? dict[ch] : ch).join('');
+  }
+
+  function applySmallCaps(text){
+    return text.split('').map(ch => {
+      const lower = ch.toLowerCase();
+      if(SMALLCAPS[lower]) return ch === lower ? SMALLCAPS[lower] : SMALLCAPS[lower];
+      return ch;
+    }).join('');
+  }
+
+  // Decorative wrap styles (symbols around the styled text)
+  const WRAPS = [
+    (s) => `『${s}』`,
+    (s) => `••${s}••`,
+    (s) => `–ᅟ${s}ᅟ–`,
+    (s) => `⌈${s}⌋`,
+    (s) => `『${s}』✦`,
+  ];
+
+  function renderFancyList(){
+    const input = document.getElementById('fancy-input').value || 'Ali';
+    const list = document.getElementById('fancy-list');
+    list.innerHTML = '';
+
+    const styles = [];
+    styles.push(applyMap(input, MAPS.bold.map));
+    styles.push(applyMap(input, MAPS.italic.map));
+    styles.push(applyMap(input, MAPS.doublestruck.map));
+    styles.push(applyMap(input, MAPS.fraktur.map));
+    styles.push(applyMap(input, MAPS.circled.map));
+    styles.push(applyMap(input, MAPS.monospace.map));
+    styles.push(applyMap(input, MAPS.fullwidth.map));
+    styles.push(applySmallCaps(input));
+    styles.push('『' + input + '』');
+    styles.push('✦ ' + input + ' ✦');
+    styles.push('▬▬▬▬ ' + input + ' ▬▬▬▬');
+    styles.push('੦ৎ ' + input);
+    styles.push(applyMap(input, MAPS.bold.map) + ' ☆');
+    styles.push('꧁' + input + '꧂');
+
+    styles.forEach(s => list.appendChild(makeItem(s)));
+  }
+
+  function renderPubgList(){
+    const input = document.getElementById('pubg-input').value || 'Ali';
+    const list = document.getElementById('pubg-list');
+    list.innerHTML = '';
+
+    const boldName = applyMap(input, MAPS.bold.map);
+
+    const styles = [
+      `꧁☬${input}☬꧂`,
+      `『${boldName}』`,
+      `Ⓢ${input}Ⓚ`,
+      `${input}™`,
+      `☬${input}☬`,
+      `𝕏•${boldName}•𝕏`,
+      `ᴳᵒᵈ${input}`,
+      `${input}⚡ᴾᴿᴼ`,
+      `『᭄${input}࿐』`,
+      `☠️${input}☠️`,
+      `𓆩${input}𓆪`,
+      `『Ⲙ』${input}`,
+      `${input}⁦❤️⁩`,
+      `ᴹᴿ_${boldName}`,
+      `꧁${input}࿐`,
+    ];
+
+    styles.forEach(s => list.appendChild(makeItem(s)));
+  }
+
+  function makeItem(text){
+    const div = document.createElement('div');
+    div.className = 'item';
+    const span = document.createElement('span');
+    span.className = 'txt';
+    span.textContent = text;
+    const btn = document.createElement('button');
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1200);
+      });
+    });
+    div.appendChild(span);
+    div.appendChild(btn);
+    return div;
+  }
+
+  document.getElementById('fancy-input').addEventListener('input', renderFancyList);
+  document.getElementById('pubg-input').addEventListener('input', renderPubgList);
+
+  renderFancyList();
+  renderPubgList();
+</script>
+
+</body>
+</html>
