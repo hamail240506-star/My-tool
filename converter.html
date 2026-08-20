@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convert — quick, exact conversions</title>
+<style>
+  :root{
+    --paper: #EAF0F2;
+    --paper-line: #C7D5DA;
+    --ink: #16324F;
+    --ink-soft: #4A6274;
+    --brass: #C98A3C;
+    --brass-dark: #A06A24;
+    --teal: #2E7D6B;
+    --panel: #FFFFFF;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+    --radius: 4px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--paper-line) 27px, var(--paper-line) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, var(--paper-line) 27px, var(--paper-line) 28px),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 32px 16px 64px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { transition: none !important; animation: none !important; }
+  }
+
+  /* Ruler header */
+  .ruler{
+    width:100%;
+    max-width: 640px;
+    height: 34px;
+    position: relative;
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .ruler .tick{
+    position:absolute;
+    bottom:0;
+    width:1px;
+    background: var(--ink-soft);
+  }
+
+  header{
+    width:100%;
+    max-width: 640px;
+    margin-bottom: 28px;
+  }
+  h1{
+    font-family: var(--mono);
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0 0 4px;
+  }
+  h1 span{ color: var(--brass-dark); }
+  .subtitle{
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin: 0;
+    letter-spacing: 0.3px;
+  }
+
+  .panel{
+    width:100%;
+    max-width: 640px;
+    background: var(--panel);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  /* Dial tabs */
+  .dial{
+    display:flex;
+    border-bottom: 1.5px solid var(--ink);
+  }
+  .dial button{
+    flex:1;
+    background: var(--panel);
+    border:none;
+    border-right: 1.5px solid var(--ink);
+    padding: 14px 8px;
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    position:relative;
+  }
+  .dial button:last-child{ border-right:none; }
+  .dial button.active{
+    color: var(--panel);
+    background: var(--ink);
+  }
+  .dial button.active::after{
+    content:"";
+    position:absolute;
+    bottom:-1.5px; left:0; right:0;
+    height:3px;
+    background: var(--brass);
+  }
+  .dial button:focus-visible{
+    outline: 2px solid var(--teal);
+    outline-offset: -2px;
+  }
+
+  .body{
+    padding: 28px 24px 24px;
+  }
+
+  .row{
+    display:flex;
+    gap: 14px;
+    align-items:flex-end;
+    margin-bottom: 18px;
+  }
+  .field{ flex:1; }
+  .field label{
+    display:block;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field select, .field input{
+    width:100%;
+    font-family: var(--mono);
+    font-size: 16px;
+    padding: 10px 10px;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+  }
+
+  .swap{
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid var(--ink);
+    background: var(--brass);
+    color: var(--panel);
+    border-radius: 50%;
+    font-family: var(--mono);
+    font-size: 16px;
+    cursor:pointer;
+    transition: transform 0.2s ease;
+  }
+  .swap:hover{ transform: rotate(180deg); }
+  .swap:focus-visible{ outline: 2px solid var(--teal); outline-offset: 2px; }
+
+  .readout{
+    margin-top: 8px;
+    padding: 18px;
+    background: var(--ink);
+    border-radius: var(--radius);
+    color: var(--paper);
+  }
+  .readout .label{
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--brass);
+    margin-bottom: 6px;
+  }
+  .readout .value{
+    font-family: var(--mono);
+    font-size: clamp(26px, 6vw, 34px);
+    font-weight: 700;
+    word-break: break-word;
+  }
+  .readout .meta{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--paper-line);
+    margin-top: 8px;
+  }
+
+  footer{
+    max-width: 640px;
+    width:100%;
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align:center;
+  }
+
+  .hidden{ display:none; }
+
+  .error{
+    color: #B3452C;
+    font-family: var(--mono);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="ruler" id="ruler"></div>
+
+<header>
+  <h1>Con<span>vert</span>.</h1>
+  <p class="subtitle">Length · Weight · Temperature · Currency — exact, no clutter</p>
+</header>
+
+<div class="panel">
+  <div class="dial" id="dial">
+    <button class="active" data-tab="length">Length</button>
+    <button data-tab="weight">Weight</button>
+    <button data-tab="temp">Temp</button>
+    <button data-tab="currency">Currency</button>
+  </div>
+
+  <div class="body">
+
+    <!-- LENGTH -->
+    <div class="tabpanel" id="panel-length">
+      <div class="row">
+        <div class="field">
+          <label for="length-from-unit">From</label>
+          <select id="length-from-unit"></select>
+        </div>
+        <button class="swap" id="length-swap" title="Swap units" aria-label="Swap units">⇄</button>
+        <div class="field">
+          <label for="length-to-unit">To</label>
+          <select id="length-to-unit"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="length-input">Amount</label>
+        <input type="number" id="length-input" value="1" inputmode="decimal">
+      </div>
+      <div class="readout">
+        <div class="label">Result</div>
+        <div class="value" id="length-result">—</div>
+      </div>
+    </div>
+
+    <!-- WEIGHT -->
+    <div class="tabpanel hidden" id="panel-weight">
+      <div class="row">
+        <div class="field">
+          <label for="weight-from-unit">From</label>
+          <select id="weight-from-unit"></select>
+        </div>
+        <button class="swap" id="weight-swap" title="Swap units" aria-label="Swap units">⇄</button>
+        <div class="field">
+          <label for="weight-to-unit">To</label>
+          <select id="weight-to-unit"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="weight-input">Amount</label>
+        <input type="number" id="weight-input" value="1" inputmode="decimal">
+      </div>
+      <div class="readout">
+        <div class="label">Result</div>
+        <div class="value" id="weight-result">—</div>
+      </div>
+    </div>
+
+    <!-- TEMPERATURE -->
+    <div class="tabpanel hidden" id="panel-temp">
+      <div class="row">
+        <div class="field">
+          <label for="temp-from-unit">From</label>
+          <select id="temp-from-unit">
+            <option value="C">Celsius</option>
+            <option value="F">Fahrenheit</option>
+            <option value="K">Kelvin</option>
+          </select>
+        </div>
+        <button class="swap" id="temp-swap" title="Swap units" aria-label="Swap units">⇄</button>
+        <div class="field">
+          <label for="temp-to-unit">To</label>
+          <select id="temp-to-unit">
+            <option value="F">Fahrenheit</option>
+            <option value="C">Celsius</option>
+            <option value="K">Kelvin</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="temp-input">Amount</label>
+        <input type="number" id="temp-input" value="1" inputmode="decimal">
+      </div>
+      <div class="readout">
+        <div class="label">Result</div>
+        <div class="value" id="temp-result">—</div>
+      </div>
+    </div>
+
+    <!-- CURRENCY -->
+    <div class="tabpanel hidden" id="panel-currency">
+      <div class="row">
+        <div class="field">
+          <label for="currency-from-unit">From</label>
+          <select id="currency-from-unit"></select>
+        </div>
+        <button class="swap" id="currency-swap" title="Swap units" aria-label="Swap units">⇄</button>
+        <div class="field">
+          <label for="currency-to-unit">To</label>
+          <select id="currency-to-unit"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="currency-input">Amount</label>
+        <input type="number" id="currency-input" value="1" inputmode="decimal">
+      </div>
+      <div class="readout">
+        <div class="label">Result</div>
+        <div class="value" id="currency-result">Loading rates…</div>
+        <div class="meta" id="currency-meta"></div>
+      </div>
+      <div class="error hidden" id="currency-error">Live rates unavailable right now — check your connection and reopen this tab.</div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Currency rates via frankfurter.app (European Central Bank data) · Runs entirely in your browser
+</footer>
+
+<script>
+  // ---------- Ruler ticks ----------
+  const ruler = document.getElementById('ruler');
+  function drawTicks(){
+    ruler.innerHTML = '';
+    const width = ruler.offsetWidth;
+    const count = Math.floor(width / 14);
+    for(let i=0;i<=count;i++){
+      const tick = document.createElement('div');
+      tick.className = 'tick';
+      const isMajor = i % 5 === 0;
+      tick.style.left = (i*14) + 'px';
+      tick.style.height = isMajor ? '16px' : '8px';
+      ruler.appendChild(tick);
+    }
+  }
+  drawTicks();
+  window.addEventListener('resize', drawTicks);
+
+  // ---------- Tabs ----------
+  const dial = document.getElementById('dial');
+  dial.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    dial.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.add('hidden'));
+    document.getElementById('panel-' + btn.dataset.tab).classList.remove('hidden');
+  });
+
+  // ---------- Generic unit converter builder ----------
+  function buildUnitConverter({ prefix, units, baseKey }){
+    const fromSel = document.getElementById(prefix + '-from-unit');
+    const toSel = document.getElementById(prefix + '-to-unit');
+    const input = document.getElementById(prefix + '-input');
+    const result = document.getElementById(prefix + '-result');
+
+    Object.keys(units).forEach(key => {
+      const o1 = document.createElement('option');
+      o1.value = key; o1.textContent = units[key].label;
+      fromSel.appendChild(o1);
+      const o2 = document.createElement('option');
+      o2.value = key; o2.textContent = units[key].label;
+      toSel.appendChild(o2);
+    });
+    fromSel.value = baseKey[0];
+    toSel.value = baseKey[1];
+
+    function compute(){
+      const val = parseFloat(input.value);
+      if(isNaN(val)){ result.textContent = '—'; return; }
+      const fromFactor = units[fromSel.value].factor;
+      const toFactor = units[toSel.value].factor;
+      const baseVal = val * fromFactor;
+      const out = baseVal / toFactor;
+      result.textContent = formatNumber(out) + ' ' + units[toSel.value].label;
+    }
+
+    [input, fromSel, toSel].forEach(el => el.addEventListener('input', compute));
+    document.getElementById(prefix + '-swap').addEventListener('click', () => {
+      const tmp = fromSel.value;
+      fromSel.value = toSel.value;
+      toSel.value = tmp;
+      compute();
+    });
+    compute();
+  }
+
+  function formatNumber(n){
+    if(Math.abs(n) >= 1000000 || (Math.abs(n) < 0.0001 && n !== 0)){
+      return n.toExponential(4);
+    }
+    return parseFloat(n.toFixed(6)).toString();
+  }
+
+  // Length — base unit: meters
+  buildUnitConverter({
+    prefix: 'length',
+    units: {
+      mm: { label: 'Millimeters', factor: 0.001 },
+      cm: { label: 'Centimeters', factor: 0.01 },
+      m:  { label: 'Meters', factor: 1 },
+      km: { label: 'Kilometers', factor: 1000 },
+      in: { label: 'Inches', factor: 0.0254 },
+      ft: { label: 'Feet', factor: 0.3048 },
+      yd: { label: 'Yards', factor: 0.9144 },
+      mi: { label: 'Miles', factor: 1609.344 }
+    },
+    baseKey: ['m', 'ft']
+  });
+
+  // Weight — base unit: grams
+  buildUnitConverter({
+    prefix: 'weight',
+    units: {
+      mg: { label: 'Milligrams', factor: 0.001 },
+      g:  { label: 'Grams', factor: 1 },
+      kg: { label: 'Kilograms', factor: 1000 },
+      oz: { label: 'Ounces', factor: 28.3495 },
+      lb: { label: 'Pounds', factor: 453.592 },
+      st: { label: 'Stone', factor: 6350.29 },
+      tonne: { label: 'Metric Tons', factor: 1000000 }
+    },
+    baseKey: ['kg', 'lb']
+  });
+
+  // ---------- Temperature (non-linear, custom) ----------
+  const tempFrom = document.getElementById('temp-from-unit');
+  const tempTo = document.getElementById('temp-to-unit');
+  const tempInput = document.getElementById('temp-input');
+  const tempResult = document.getElementById('temp-result');
+
+  function toCelsius(val, unit){
+    if(unit === 'C') return val;
+    if(unit === 'F') return (val - 32) * 5/9;
+    if(unit === 'K') return val - 273.15;
+  }
+  function fromCelsius(val, unit){
+    if(unit === 'C') return val;
+    if(unit === 'F') return (val * 9/5) + 32;
+    if(unit === 'K') return val + 273.15;
+  }
+  function computeTemp(){
+    const val = parseFloat(tempInput.value);
+    if(isNaN(val)){ tempResult.textContent = '—'; return; }
+    const c = toCelsius(val, tempFrom.value);
+    const out = fromCelsius(c, tempTo.value);
+    const unitLabel = { C: '°C', F: '°F', K: 'K' }[tempTo.value];
+    tempResult.textContent = formatNumber(out) + ' ' + unitLabel;
+  }
+  [tempInput, tempFrom, tempTo].forEach(el => el.addEventListener('input', computeTemp));
+  document.getElementById('temp-swap').addEventListener('click', () => {
+    const tmp = tempFrom.value;
+    tempFrom.value = tempTo.value;
+    tempTo.value = tmp;
+    computeTemp();
+  });
+  computeTemp();
+
+  // ---------- Currency (live rates via frankfurter.app, no API key) ----------
+  const currencyFrom = document.getElementById('currency-from-unit');
+  const currencyTo = document.getElementById('currency-to-unit');
+  const currencyInput = document.getElementById('currency-input');
+  const currencyResult = document.getElementById('currency-result');
+  const currencyMeta = document.getElementById('currency-meta');
+  const currencyError = document.getElementById('currency-error');
+
+  let rates = null;
+  let ratesDate = null;
+
+  async function fetchWithTimeout(url, ms){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    try{
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      return res;
+    }catch(err){
+      clearTimeout(timer);
+      throw err;
+    }
+  }
+
+  async function loadRates(){
+    const endpoints = [
+      'https://api.frankfurter.dev/v1/latest?base=USD',
+      'https://api.frankfurter.app/latest?from=USD'
+    ];
+    let data = null;
+    for(const url of endpoints){
+      try{
+        const res = await fetchWithTimeout(url, 6000);
+        if(!res.ok) continue;
+        data = await res.json();
+        break;
+      }catch(err){
+        continue;
+      }
+    }
+    try{
+      if(!data) throw new Error('no endpoint responded');
+      rates = data.rates;
+      rates['USD'] = 1;
+      ratesDate = data.date;
+
+      const codes = Object.keys(rates).sort();
+      codes.forEach(code => {
+        const o1 = document.createElement('option');
+        o1.value = code; o1.textContent = code;
+        currencyFrom.appendChild(o1);
+        const o2 = document.createElement('option');
+        o2.value = code; o2.textContent = code;
+        currencyTo.appendChild(o2);
+      });
+      currencyFrom.value = 'USD';
+      currencyTo.value = codes.includes('EUR') ? 'EUR' : codes[0];
+      computeCurrency();
+    }catch(err){
+      currencyError.classList.remove('hidden');
+      currencyResult.textContent = 'Unavailable';
+    }
+  }
+
+  function computeCurrency(){
+    if(!rates) return;
+    const val = parseFloat(currencyInput.value);
+    if(isNaN(val)){ currencyResult.textContent = '—'; return; }
+    const usdVal = val / rates[currencyFrom.value];
+    const out = usdVal * rates[currencyTo.value];
+    currencyResult.textContent = formatNumber(out) + ' ' + currencyTo.value;
+    currencyMeta.textContent = 'Rates as of ' + ratesDate + ' (ECB reference rates)';
+  }
+
+  [currencyInput, currencyFrom, currencyTo].forEach(el => el.addEventListener('input', computeCurrency));
+  document.getElementById('currency-swap').addEventListener('click', () => {
+    const tmp = currencyFrom.value;
+    currencyFrom.value = currencyTo.value;
+    currencyTo.value = tmp;
+    computeCurrency();
+  });
+
+  loadRates();
+</script>
+
+</body>
+</html>
